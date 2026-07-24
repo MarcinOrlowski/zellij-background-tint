@@ -168,10 +168,12 @@ rustup default stable
 
 # Add wasm target
 rustup target add wasm32-wasip1
+
+# build and install locally
+bin/install.sh
 ```
 
 ## License
 
-[MIT](LICENSE). Derived from
-[zellij-pane-colors](https://github.com/sudo-vaibhav/zellij-pane-colors)
-© 2026 Vaibhav Chopra. Modifications © 2026 Marcin Orlowski.
+* Written and copyrighted &copy;2026 by Marcin Orlowski <mail (#) marcinorlowski (.) com>
+* zellij-background-tint is open-source software licensed under the [MIT license](http://opensource.org/licenses/MIT)

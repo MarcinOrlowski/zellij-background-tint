@@ -3,7 +3,7 @@ name = "zellij-background-tint"
 version = "0.1.0"
 edition = "2021"
 publish = false
-description = "Subtly tint each Zellij pane's background from the active theme colour"
+description = "Subtly tint each Zellij pane's background"
 license = "MIT"
 repository = "https://github.com/MarcinOrlowski/zellij-background-tint"
 readme = "README.md"
@@ -11,7 +11,7 @@ keywords = ["zellij", "terminal", "plugin", "wasm"]
 categories = ["command-line-utilities"]
 
 [dependencies]
-zellij-tile = "=0.44.0"
+zellij-tile = "=0.44.3"
 
 [profile.release]
 lto = true
