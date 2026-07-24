@@ -94,7 +94,7 @@ Requirements:
 
 ```sh
 rustup target add wasm32-wasip1
-./install.sh
+./bin/install.sh
 ```
 
 This installs the plugin to:

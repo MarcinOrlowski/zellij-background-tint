@@ -3,7 +3,9 @@ set -euo pipefail
 
 SCRIPT_NAME="$(basename "${BASH_SOURCE[0]}")"
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd -P)"
-readonly SCRIPT_NAME SCRIPT_DIR
+# The script lives in bin/; the crate root is its parent.
+PROJECT_ROOT="$(cd "${SCRIPT_DIR}/.." && pwd -P)"
+readonly SCRIPT_NAME SCRIPT_DIR PROJECT_ROOT
 
 readonly TARGET="wasm32-wasip1"
 readonly CRATE="zellij-background-tint"
@@ -78,10 +80,10 @@ main() {
 
   local install_dir artifact
   install_dir="${XDG_CONFIG_HOME:-${HOME}/.config}/zellij/plugins"
-  artifact="${SCRIPT_DIR}/target/${TARGET}/release/${CRATE}.wasm"
+  artifact="${PROJECT_ROOT}/target/${TARGET}/release/${CRATE}.wasm"
 
   log_info "Building ${CRATE} for ${TARGET} ..."
-  cargo build --manifest-path "${SCRIPT_DIR}/Cargo.toml" --release --target "${TARGET}"
+  cargo build --manifest-path "${PROJECT_ROOT}/Cargo.toml" --release --target "${TARGET}"
 
   if [[ ! -f "${artifact}" ]]; then
     log_error "Build reported success but artifact is missing: ${artifact}"
