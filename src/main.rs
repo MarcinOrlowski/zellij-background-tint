@@ -1,4 +1,4 @@
-/***********************************************************************
+/** ****************************************************************************
  *
  * zellij-background-tint
  *
@@ -9,11 +9,13 @@
  * @license   http://www.opensource.org/licenses/mit-license.php MIT
  * @link      https://github.com/MarcinOrlowski/zellij-background-tint
  *
- **********************************************************************/
-
+ *************************************************************************** **/
 use std::collections::{BTreeMap, HashSet, VecDeque};
 
 use zellij_tile::prelude::*;
+
+#[cfg(test)]
+mod tests;
 
 // Debug logging.
 macro_rules! dbg_log {

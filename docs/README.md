@@ -106,3 +106,36 @@ bin/build.sh -i
 The `build.sh` script compiles the project. Without arguments it only builds and prints
 the path to the produced `.wasm`; with `-i` it also installs the plugin to your local
 `${XDG_CONFIG_HOME:-$HOME/.config}/zellij/plugins/` folder.
+
+### Running tests
+
+The unit tests live in `src/tests.rs` and cover the config parsers, the RGB/HSL color
+math and the tint assignment logic. They run on your **host** target (not `wasm32-wasip1`),
+so no extra target is needed:
+
+```bash
+# Run the whole suite
+cargo test
+
+# Run a single test (substring match) with its output shown
+cargo test assign_tint -- --nocapture
+```
+
+The first host build is slow, as `zellij-tile` pulls in `zellij-utils` and its
+dependency tree; later runs are incremental.
+
+The same checks CI runs can be reproduced locally:
+
+```bash
+cargo fmt --all -- --check
+cargo clippy --all-targets --locked -- -D warnings
+cargo test --locked
+```
+
+### Continuous integration
+
+`.github/workflows/ci.yml` runs on every push and pull request. It has two jobs:
+
+- **Test (host)** - formatting check, Clippy with warnings denied, and the unit tests.
+- **Build (wasm32-wasip1)** - runs `bin/build.sh` and uploads the resulting `.wasm`
+  as a workflow artifact.
