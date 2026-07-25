@@ -1,1 +1,14 @@
+# IDE
+/.idea
+/.vscode
+
+# TMP files
+*.bak
+*~
+*.swp
+*.kate-swp
+*.tmp
+.viminfo
+
+# Builds
 /target

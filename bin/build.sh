@@ -15,11 +15,12 @@ log_error() { printf '%s\n' "ERROR: ${1}" >&2; }
 
 show_usage() {
   cat <<EOF
-Usage: ${SCRIPT_NAME} [-h]
+Usage: ${SCRIPT_NAME} [-i] [-h]
 
-Build the ${CRATE} Zellij plugin for ${TARGET} and install the resulting
-.wasm into your Zellij plugins directory.
+Build the ${CRATE} Zellij plugin for ${TARGET}. By default the resulting
+.wasm is left in the target directory and its path is printed.
 
+  -i    Also install the .wasm into your Zellij plugins directory
   -h    Show this help
 
 Environment:
@@ -55,8 +56,13 @@ fail_missing_target() {
 }
 
 main() {
-  while getopts ":h" opt; do
+  local do_install=0
+
+  while getopts ":ih" opt; do
     case "${opt}" in
+      i)
+        do_install=1
+        ;;
       h)
         show_usage
         exit 0
@@ -88,6 +94,12 @@ main() {
   if [[ ! -f "${artifact}" ]]; then
     log_error "Build reported success but artifact is missing: ${artifact}"
     exit 1
+  fi
+
+  if (( do_install == 0 )); then
+    log_info "Built ${artifact}"
+    log_info "Re-run with -i to install it into ${install_dir}"
+    return 0
   fi
 
   install -d "${install_dir}"

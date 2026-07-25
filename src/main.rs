@@ -15,9 +15,7 @@ use std::collections::{BTreeMap, HashSet, VecDeque};
 
 use zellij_tile::prelude::*;
 
-// Debug logging. Prepends the plugin's log prefix and gates on the `debug`
-// config flag, so both the prefix and the gate live in exactly one place.
-// Message arguments are only evaluated when debug logging is enabled.
+// Debug logging.
 macro_rules! dbg_log {
     ($self:ident, $fmt:literal $(, $arg:expr)* $(,)?) => {
         if $self.debug {
@@ -26,32 +24,19 @@ macro_rules! dbg_log {
     };
 }
 
-// Instead of shipping its own palette, this plugin reads the active theme's
-// background colour and applies a per-pane tint to it. Magnitudes are chosen
-// to be clearly visible on a coloured theme background while still reading as
-// a tint of that colour (not a fresh palette):
-//   hue        +/- 20 degrees
-//   saturation +/- 12 %
-//   lightness  +/- 10 %
-// Each is overridable from the plugin configuration (`hue`, `saturation`,
-// `lightness`), where saturation/lightness are given in percent.
+// Default mutation parameters
 const DEFAULT_MAX_HUE_DEG: f32 = 20.0;
 const DEFAULT_MAX_SATURATION_PCT: f32 = 12.0;
 const DEFAULT_MAX_LIGHTNESS_PCT: f32 = 10.0;
 
-// How many recently assigned tints to remember when spreading colours apart.
-// Each new pane's tint is chosen to be as distant as possible from these, so a
-// small cluster of panes does not end up with near-identical shades. Override
-// with the `history` config key; 0 disables the spreading (pure per-id hash).
+// How many recently assigned tints to remember when spreading colors apart.
 const DEFAULT_HISTORY: usize = 16;
 // Candidates generated per pane; the most distant from `recent` wins.
 const ASSIGN_ATTEMPTS: u32 = 64;
-// RGB Euclidean distance considered "clearly different"; once a candidate beats
-// this against every remembered tint we stop early instead of trying all 64.
+// RGB Euclidean distance considered "clearly different" to use the color.
 const SEPARATION_TARGET: f32 = 72.0;
 
-// The event set we subscribe to. Kept in one place so the startup subscribe and
-// the permission-grant re-subscribe stay in sync.
+// The event set we subscribe to.
 const EVENTS: [EventType; 3] = [
     EventType::ModeUpdate,
     EventType::PaneUpdate,
@@ -60,9 +45,7 @@ const EVENTS: [EventType; 3] = [
 
 struct BackgroundTint {
     handled: HashSet<PaneId>,
-    // The background colour every pane tint is derived from. Either supplied
-    // explicitly via the `base` config key (base_locked = true), or read from
-    // the active theme on ModeUpdate.
+    // The background color every pane tint is derived from.
     base_bg: Option<(u8, u8, u8)>,
     // When true, base_bg came from config and ModeUpdate must not overwrite it.
     // Needed because in setups where the terminal background is defined by the
@@ -114,8 +97,7 @@ impl ZellijPlugin for BackgroundTint {
             .and_then(|v| v.trim().parse().ok())
             .unwrap_or(DEFAULT_HISTORY);
 
-        // Explicit base colour wins. Available immediately at load, so panes can
-        // be tinted from the first PaneUpdate without waiting on a ModeUpdate.
+        // Explicit base color wins.
         if let Some(rgb) = configuration.get("base").and_then(|s| parse_hex_color(s)) {
             self.base_bg = Some(rgb);
             self.base_locked = true;
@@ -131,8 +113,8 @@ impl ZellijPlugin for BackgroundTint {
             self.max_lightness,
         );
 
-        // ModeUpdate carries the active theme (fallback base colour). PaneUpdate
-        // drives per-pane colouring - it is delivered at startup, so with a
+        // ModeUpdate carries the active theme (fallback base color). PaneUpdate
+        // drives per-pane coloring - it is delivered at startup, so with a
         // config `base` present here panes are tinted immediately, no manual
         // refresh needed. PermissionRequestResult lets us replay work rejected
         // before the grant landed.
@@ -149,9 +131,7 @@ impl ZellijPlugin for BackgroundTint {
                 let raw = mode_info.style.colors.text_unselected.background;
                 let new_base = palette_color_to_rgb(raw);
                 dbg_log!(self, "ModeUpdate: raw={:?} -> rgb={:?}", raw, new_base);
-                // A config base is authoritative; the theme background is only a
-                // fallback (and can be a default-constructed black in setups
-                // where the emulator, not Zellij, owns the real background).
+                // A config base color is authoritative; the theme is a fallback.
                 if !self.base_locked && self.base_bg != Some(new_base) {
                     self.base_bg = Some(new_base);
                     self.handled.clear();
@@ -176,7 +156,12 @@ impl ZellijPlugin for BackgroundTint {
                 dbg_log!(
                     self,
                     "PaneUpdate: {} terminal pane(s)",
-                    manifest.panes.values().flatten().filter(|p| !p.is_plugin).count(),
+                    manifest
+                        .panes
+                        .values()
+                        .flatten()
+                        .filter(|p| !p.is_plugin)
+                        .count(),
                 );
                 self.latest_manifest = Some(manifest.clone());
                 self.handle_manifest(manifest);
@@ -216,11 +201,11 @@ impl BackgroundTint {
             }
 
             // Mark first: set_pane_color causes another PaneUpdate, and this
-            // prevents that event from recolouring the pane.
+            // prevents that event from recoloring the pane.
             self.handled.insert(pane_id);
 
             // The API exposes the value but not its provenance. Preserve every
-            // existing background, including colours explicitly set by layouts.
+            // existing background, including colors explicitly set by layouts.
             if has_existing_background {
                 dbg_log!(self, "{:?}: has existing bg, skipping", pane_id);
                 continue;
@@ -233,22 +218,22 @@ impl BackgroundTint {
         }
     }
 
-    // Choose this pane's tinted background. Candidates are deterministic per-pane
-    // shifts of the base colour in HSL space (seeded on the pane id, so a pane
-    // keeps its tint across updates). To stop nearby panes from landing on
-    // near-identical shades - likely when the base is dark/desaturated and the
-    // shift box is small - we generate several candidates and keep the one
-    // farthest (RGB distance) from the last `history` assigned tints.
+    // Choose this pane's tinted background.
     fn assign_tint(&mut self, pane_id: PaneId, base: (u8, u8, u8)) -> (u8, u8, u8) {
         let seed = match pane_id {
             PaneId::Terminal(id) => id as u64,
             PaneId::Plugin(id) => id as u64,
         };
 
-        let attempts = if self.history == 0 { 1 } else { ASSIGN_ATTEMPTS };
+        let attempts = if self.history == 0 {
+            1
+        } else {
+            ASSIGN_ATTEMPTS
+        };
         let mut best: (u8, u8, u8) = base;
         let mut best_dist = f32::NEG_INFINITY;
 
+        // Let's calculate unique tinted color to be used.
         for attempt in 0..attempts {
             // Mix the attempt index into the seed so each candidate is a
             // different, still-deterministic point in the shift box.
@@ -275,8 +260,9 @@ impl BackgroundTint {
                 best_dist = min_dist;
                 best = candidate;
             }
-            // Good enough separation from everything remembered - stop early.
+
             if min_dist >= SEPARATION_TARGET {
+                // We go it.
                 break;
             }
         }
@@ -291,7 +277,7 @@ impl BackgroundTint {
     }
 }
 
-// Euclidean distance between two RGB colours.
+// Euclidean distance between two RGB colors.
 fn rgb_distance(a: (u8, u8, u8), b: (u8, u8, u8)) -> f32 {
     let dr = a.0 as f32 - b.0 as f32;
     let dg = a.1 as f32 - b.1 as f32;
@@ -345,7 +331,7 @@ fn parse_f32(config: &BTreeMap<String, String>, key: &str, default: f32) -> f32 
 fn palette_color_to_rgb(color: PaletteColor) -> (u8, u8, u8) {
     match color {
         PaletteColor::Rgb(rgb) => rgb,
-        // Reuse the SDK's own 256-colour conversion via its rgb string form,
+        // Reuse the SDK's own 256-color conversion via its rgb string form,
         // so an 8-bit theme background maps exactly as Zellij would render it.
         PaletteColor::EightBit(_) => parse_rgb_str(&color.as_rgb_str()),
     }
@@ -366,6 +352,7 @@ fn parse_rgb_str(s: &str) -> (u8, u8, u8) {
     }
 }
 
+// Converts RGB colors to HSL representation
 fn rgb_to_hsl((r, g, b): (u8, u8, u8)) -> (f32, f32, f32) {
     let r = r as f32 / 255.0;
     let g = g as f32 / 255.0;
@@ -397,6 +384,7 @@ fn rgb_to_hsl((r, g, b): (u8, u8, u8)) -> (f32, f32, f32) {
     (hue * 60.0, sat, light)
 }
 
+// Converts HSL colors to RGB
 fn hsl_to_rgb(hue: f32, sat: f32, light: f32) -> (u8, u8, u8) {
     if sat <= 0.0 {
         let v = channel(light);
@@ -418,6 +406,10 @@ fn hsl_to_rgb(hue: f32, sat: f32, light: f32) -> (u8, u8, u8) {
     )
 }
 
+fn channel(x: f32) -> u8 {
+    (x * 255.0).round().clamp(0.0, 255.0) as u8
+}
+
 fn hue_to_rgb(p: f32, q: f32, mut t: f32) -> f32 {
     if t < 0.0 {
         t += 1.0;
@@ -435,8 +427,4 @@ fn hue_to_rgb(p: f32, q: f32, mut t: f32) -> f32 {
         return p + (q - p) * (2.0 / 3.0 - t) * 6.0;
     }
     p
-}
-
-fn channel(x: f32) -> u8 {
-    (x * 255.0).round().clamp(0.0, 255.0) as u8
 }
