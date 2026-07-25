@@ -16,7 +16,8 @@ Unless you switch styles on daily basis, setting up `base` parameter is recommen
 
 ## Installation
 
-1. Download `zellij-background-tint.wasm` file from project's [Releases](../releases/) page.
+1. Download `zellij-background-tint.wasm` file from project's [Releases](../releases/) page (if artefact
+   is provided as `*.zip` file, extract the plugin file from it first.
 2. Put it into `~/.config/zellij/plugins/` folder.
 3. Back up your current `~/.config/zellij/config.kdl`
 4. Edit `config.kdl` and per [Configuration](#configuration) section.
