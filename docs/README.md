@@ -9,7 +9,7 @@ plugin falls back to reading the active theme's background.
 was [reported](https://github.com/zellij-org/zellij/issues/5408)) and plugin often can read the
 color as `#000000` (black), regardless of the style settings. To work that around either set
 `base` to the backgrpund color used by your style, or force Zellij to propagate this by enforcing
-input-mode change (e.g. <kbd>CTRL</kbd>-<kbd>g</kbd>`). This needs to be done only once though.
+input-mode change (e.g. <kbd>CTRL</kbd>-<kbd>g</kbd>). This needs to be done only once though.
 Unless you switch styles on daily basis, setting up `base` parameter is recommended approach.
 
 ---
