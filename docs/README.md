@@ -8,7 +8,7 @@ plugin falls back to reading the active theme's background.
 **IMPORTANT:** On recent Zellij 0.44.3 obtaining style details is not reliable (this
 was [reported](https://github.com/zellij-org/zellij/issues/5408)) and plugin often can read the
 color as `#000000` (black), regardless of the style settings. To work that around either set
-`base` to the backgrpund color used by your style, or force Zellij to propagate this by enforcing
+`base` to the background color used by your style, or force Zellij to propagate this by enforcing
 input-mode change (e.g. <kbd>CTRL</kbd>-<kbd>g</kbd>). This needs to be done only once though.
 Unless you switch styles on daily basis, setting up `base` parameter is recommended approach.
 
@@ -16,8 +16,8 @@ Unless you switch styles on daily basis, setting up `base` parameter is recommen
 
 ## Installation
 
-1. Download `zellij-background-tint.wasm` file from project's [Releases](../releases/) page (if artefact
-   is provided as `*.zip` file, extract the plugin file from it first.
+1. Download `zellij-background-tint.wasm` file from project's [Releases](../releases/) page (if artifact
+   is provided as `*.zip` file, extract the plugin file from it first).
 2. Put it into `~/.config/zellij/plugins/` folder.
 3. Back up your current `~/.config/zellij/config.kdl`
 4. Edit `config.kdl` and per [Configuration](#configuration) section.
@@ -35,7 +35,7 @@ Unless you switch styles on daily basis, setting up `base` parameter is recommen
 6. Completely quit all Zellij sessions and start it again.
 7. The first launch presents a permission prompt; approve it to enable tinting.
 
-**NOTE:** Use the real absolute path as `<HOME_DIR>` as Zellij plugin URLs do not expand `$HOME` evn
+**NOTE:** Use the real absolute path as `<HOME_DIR>` as Zellij plugin URLs do not expand `$HOME` env
 variable.
 
 To uninstall, remove the `background-tint` lines from both `plugins` and `load_plugins`, then remove
